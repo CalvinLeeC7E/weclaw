@@ -39,6 +39,11 @@ var startCmd = &cobra.Command{
 }
 
 func runStart(cmd *cobra.Command, args []string) error {
+	// Force foreground mode in Docker/containers
+	if isInDocker() {
+		foregroundFlag = true
+	}
+
 	if !foregroundFlag {
 		// Check if login is needed — if so, do it in foreground first, then daemon
 		accounts, _ := ilink.LoadAllCredentials()
@@ -330,6 +335,18 @@ func doLogin(ctx context.Context) (*ilink.Credentials, error) {
 	fmt.Printf("\nLogin successful! Credentials saved to %s\n", dir)
 	fmt.Printf("Bot ID: %s\n\n", creds.ILinkBotID)
 	return creds, nil
+}
+
+// isInDocker detects if running inside a Docker container
+func isInDocker() bool {
+	// Check for common container environment variables
+	dockerVars := []string{"DOCKER_CONTAINER", "KUBERNETES_SERVICE_HOST"}
+	for _, v := range dockerVars {
+		if os.Getenv(v) != "" {
+			return true
+		}
+	}
+	return false
 }
 
 // --- Daemon mode ---
